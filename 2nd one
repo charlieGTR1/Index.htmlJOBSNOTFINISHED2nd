@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuitAnything - Beat Any Addiction</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #6a11cb, #2575fc);
+      color: #fff;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      padding: 30px 20px;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      margin-bottom: 10px;
+    }
+
+    p {
+      font-size: 1rem;
+      margin-bottom: 20px;
+    }
+
+    input {
+      padding: 10px;
+      margin: 5px;
+      border-radius: 6px;
+      border: none;
+      width: 80%;
+      max-width: 250px;
+    }
+
+    button {
+      background-color: #635bff;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      transition: 0.3s;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background-color: #5146d9;
+    }
+
+    #app {
+      display: none;
+      margin-top: 30px;
+    }
+
+    footer {
+      margin-top: 50px;
+      font-size: 0.8rem;
+      opacity: 0.7;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>QuitAnything</h1>
+    <p>Track your streaks, build better habits, and finally quit what’s holding you back.</p>
+  </header>
+
+  <!-- Login / Signup -->
+  <div id="auth">
+    <h2>Login or Sign Up</h2>
+    <input type="email" id="email" placeholder="Email"><br>
+    <input type="password" id="password" placeholder="Password"><br>
+    <button onclick="signUp()">Sign Up</button>
+    <button onclick="logIn()">Log In</button>
+  </div>
+
+  <!-- App Area (hidden until logged in) -->
+  <div id="app">
+    <h2>Welcome, <span id="userEmail"></span> 👋</h2>
+    <p>Your streak: <span id="streak">0</span> days</p>
+    <button onclick="resetStreak()">Reset Streak</button>
+    <br><br>
+    <!-- Stripe Button -->
+    <button id="upgradeBtn">Upgrade to Pro</button>
+    <br><br>
+    <button onclick="logOut()">Log Out</button>
+  </div>
+
+  <footer>
+    <p>&copy; 2025 QuitAnything. All rights reserved.</p>
+  </footer>
+
+  <!-- Firebase + App Code -->
+  <script type="module">
+    // Import Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } 
+      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc } 
+      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // Your Firebase config (replace with your actual keys)
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    // Init Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const authDiv = document.getElementById("auth");
+    const appDiv = document.getElementById("app");
+    const streakEl = document.getElementById("streak");
+    const userEmailEl = document.getElementById("userEmail");
+
+    // Sign up
+    async function signUp() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      try {
+        const userCred = await createUserWithEmailAndPassword(auth, email, password);
+        await setDoc(doc(db, "users", userCred.user.uid), { streak: 0 });
+        alert("Signed up!");
+        showApp(userCred.user);
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    // Log in
+    async function logIn() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      try {
+        const userCred = await signInWithEmailAndPassword(auth, email, password);
+        showApp(userCred.user);
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    // Show app when logged in
+    async function showApp(user) {
+      authDiv.style.display = "none";
+      appDiv.style.display = "block";
+      userEmailEl.innerText = user.email;
+
+      // Load streak
+      const docSnap = await getDoc(doc(db, "users", user.uid));
+      if (docSnap.exists()) {
+        streakEl.innerText = docSnap.data().streak;
+      }
+    }
+
+    // Reset streak
+    async function resetStreak() {
+      const user = auth.currentUser;
+      if (!user) return;
+      await setDoc(doc(db, "users", user.uid), { streak: 0 });
+      streakEl.innerText = 0;
+      alert("Streak reset!");
+    }
+
+    // Log out
+    async function logOut() {
+      await signOut(auth);
+      appDiv.style.display = "none";
+      authDiv.style.display = "block";
+    }
+
+    // Stripe Upgrade
+    document.getElementById("upgradeBtn").addEventListener("click", () => {
+      window.location.href = "https://buy.stripe.com/eVq00l1NX40qfeNbkh5EY08";
+    });
+  </script>
+</body>
+</html>
